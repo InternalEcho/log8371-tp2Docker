@@ -1,0 +1,91 @@
+version: '3'
+services:
+  master:
+    build:
+        context: .
+        args:
+          install_path: /usr/local
+    container_name: elastic-master
+    user: elasticsearch
+    environment:
+      - "PAGENT_PATH=-agentpath:/usr/local/jprofiler11.1.2/bin/linux-x64/libjprofilerti.so=port=8849,nowait"
+      - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
+      - node.name=master
+      - node.master=true
+      - cluster.initial_master_nodes=master
+      - cluster.name=elastic-cluster
+      - bootstrap.memory_lock=true
+    restart: always
+    privileged: true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - elasticmasterdata:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+      - 9300:9300
+      - 8849:8849
+    networks:
+      - elasticnet
+
+  slave:
+    build:
+        context: .
+        args:
+          install_path: /usr/local
+    user: elasticsearch
+    environment:
+      - "PAGENT_PATH=-agentpath:/usr/local/jprofiler11.1.2/bin/linux-x64/libjprofilerti.so=port=8849,nowait"
+      - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
+      - cluster.name=elastic-cluster
+      - discovery.seed_hosts=master
+      - bootstrap.memory_lock=true
+    restart: always
+    depends_on:
+      - master
+    links:
+      - master:master
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - elasticslavedata:/usr/share/elasticsearch/data
+    ports:
+      - 8849
+    networks:
+      - elasticnet
+
+  cadvisor:
+    image: google/cadvisor:latest
+    container_name: cadvisor
+    ports:
+    - 8080:8080
+    depends_on:
+    - master
+    volumes:
+    - /:/rootfs:ro
+    - /var/run:/var/run:ro
+    - /sys:/sys:ro
+    - /var/lib/docker/:/var/lib/docker:ro
+    - /dev/disk/:/dev/disk:ro
+    networks:
+    - elasticnet
+
+volumes:
+  elasticmasterdata:
+    driver: local
+  elasticslavedata:
+    driver: local
+
+networks:
+  elasticnet:
+    driver: bridge
