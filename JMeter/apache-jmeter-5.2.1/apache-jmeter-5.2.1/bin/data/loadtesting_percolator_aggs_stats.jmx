@@ -2,10 +2,10 @@
 <jmeterTestPlan version="1.2" properties="5.0" jmeter="5.2.1">
   <hashTree>
     <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="LoadTesting (percolator, aggs-matrix-stats)" enabled="true">
-      <stringProp name="TestPlan.comments">Charge Reduite (50/03/1), Charge Moyenne (100/05/1), Charge Augmente (250/10/1), Charge Exceptionnelle (500/15/1)</stringProp>
+      <stringProp name="TestPlan.comments">Charge Reduite (50/15/25), Charge Moyenne (100/30/50), Charge Augmente (250/45/75), Charge Exceptionnelle (500/60/100)</stringProp>
       <boolProp name="TestPlan.functional_mode">false</boolProp>
       <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
-      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">true</boolProp>
       <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
         <collectionProp name="Arguments.arguments">
           <elementProp name="numberThreads" elementType="Argument">
@@ -15,12 +15,12 @@
           </elementProp>
           <elementProp name="rampUpPeriod" elementType="Argument">
             <stringProp name="Argument.name">rampUpPeriod</stringProp>
-            <stringProp name="Argument.value">3</stringProp>
+            <stringProp name="Argument.value">15</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="loopCount" elementType="Argument">
             <stringProp name="Argument.name">loopCount</stringProp>
-            <stringProp name="Argument.value">1</stringProp>
+            <stringProp name="Argument.value">25</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
         </collectionProp>
@@ -69,7 +69,7 @@
 			&quot;state&quot;: {&quot;type&quot;: &quot;text&quot;},&#xd;
 			&quot;fips&quot;: {&quot;type&quot;: &quot;long&quot;},&#xd;
 			&quot;cases&quot;: {&quot;type&quot;: &quot;int&quot;},&#xd;
-			&quot;deaths&quot;: {&quot;type&quot;: &quot;int&quot;},&#xd;
+			&quot;deaths&quot;: {&quot;type&quot;: &quot;int&quot;}&#xd;
 		}&#xd;
 	}&#xd;
 }</stringProp>
@@ -81,7 +81,7 @@
             <stringProp name="HTTPSampler.port">9200</stringProp>
             <stringProp name="HTTPSampler.protocol"></stringProp>
             <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/matrixstats/</stringProp>
+            <stringProp name="HTTPSampler.path">/data_load/</stringProp>
             <stringProp name="HTTPSampler.method">PUT</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -95,9 +95,47 @@
         </hashTree>
         <LoopController guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
           <boolProp name="LoopController.continue_forever">true</boolProp>
-          <stringProp name="LoopController.loops">1</stringProp>
+          <stringProp name="LoopController.loops">${numberThreads}</stringProp>
         </LoopController>
         <hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="percolator-create-index" enabled="true">
+            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+              <collectionProp name="Arguments.arguments">
+                <elementProp name="" elementType="HTTPArgument">
+                  <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                  <stringProp name="Argument.value">{&#xd;
+    &quot;mappings&quot;: {&#xd;
+        &quot;properties&quot;: {&#xd;
+             &quot;message&quot;: {&#xd;
+                 &quot;type&quot;: &quot;text&quot;&#xd;
+             },&#xd;
+             &quot;query&quot;: {&#xd;
+                 &quot;type&quot;: &quot;percolator&quot;&#xd;
+             }&#xd;
+        }&#xd;
+    }&#xd;
+}&#xd;
+</stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                </elementProp>
+              </collectionProp>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain">192.168.99.100</stringProp>
+            <stringProp name="HTTPSampler.port">9200</stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
+            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+            <stringProp name="HTTPSampler.path">/my-index?pretty</stringProp>
+            <stringProp name="HTTPSampler.method">PUT</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+            <stringProp name="HTTPSampler.response_timeout"></stringProp>
+          </HTTPSamplerProxy>
+          <hashTree/>
           <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="aggs-matrix-stats-post-data" enabled="true">
             <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
             <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
@@ -107,7 +145,7 @@
                   <stringProp name="Argument.value">{&#xd;
 	&quot;date&quot;: &quot;${date}&quot;,&#xd;
 	&quot;state&quot;: &quot;${state}&quot;,&#xd;
-	&quot;fips&quot;: {&quot;type&quot;: &quot;long&quot;},&#xd;
+	&quot;fips&quot;: &quot;${fips}&quot;,&#xd;
 	&quot;cases&quot;: &quot;${cases}&quot;,&#xd;
 	&quot;deaths&quot;: &quot;${deaths}&quot;&#xd;
 }&#xd;
@@ -120,7 +158,7 @@
             <stringProp name="HTTPSampler.port">9200</stringProp>
             <stringProp name="HTTPSampler.protocol"></stringProp>
             <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/matrixstats/_doc</stringProp>
+            <stringProp name="HTTPSampler.path">/data_load/_doc/</stringProp>
             <stringProp name="HTTPSampler.method">POST</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -134,8 +172,8 @@
             <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="CSV Data Set Config" enabled="true">
               <stringProp name="delimiter">,</stringProp>
               <stringProp name="fileEncoding"></stringProp>
-              <stringProp name="filename">./data/us-states.csv</stringProp>
-              <boolProp name="ignoreFirstLine">true</boolProp>
+              <stringProp name="filename">./us-states.csv</stringProp>
+              <boolProp name="ignoreFirstLine">false</boolProp>
               <boolProp name="quotedData">false</boolProp>
               <boolProp name="recycle">true</boolProp>
               <stringProp name="shareMode">shareMode.all</stringProp>
@@ -182,50 +220,6 @@
             <hashTree/>
           </hashTree>
         </hashTree>
-        <LoopController guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
-          <boolProp name="LoopController.continue_forever">true</boolProp>
-          <stringProp name="LoopController.loops">1</stringProp>
-        </LoopController>
-        <hashTree>
-          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="percolator-create-index" enabled="true">
-            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
-            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
-              <collectionProp name="Arguments.arguments">
-                <elementProp name="" elementType="HTTPArgument">
-                  <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                  <stringProp name="Argument.value">{&#xd;
-    &quot;mappings&quot;: {&#xd;
-        &quot;properties&quot;: {&#xd;
-             &quot;message&quot;: {&#xd;
-                 &quot;type&quot;: &quot;text&quot;&#xd;
-             },&#xd;
-             &quot;query&quot;: {&#xd;
-                 &quot;type&quot;: &quot;percolator&quot;&#xd;
-             }&#xd;
-        }&#xd;
-    }&#xd;
-}&#xd;
-</stringProp>
-                  <stringProp name="Argument.metadata">=</stringProp>
-                </elementProp>
-              </collectionProp>
-            </elementProp>
-            <stringProp name="HTTPSampler.domain">192.168.99.100</stringProp>
-            <stringProp name="HTTPSampler.port">9200</stringProp>
-            <stringProp name="HTTPSampler.protocol"></stringProp>
-            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/my-index?pretty</stringProp>
-            <stringProp name="HTTPSampler.method">PUT</stringProp>
-            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
-            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
-            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
-            <stringProp name="HTTPSampler.response_timeout"></stringProp>
-          </HTTPSamplerProxy>
-          <hashTree/>
-        </hashTree>
       </hashTree>
       <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Run Load Test" enabled="true">
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
@@ -238,7 +232,8 @@
         <boolProp name="ThreadGroup.scheduler">false</boolProp>
         <stringProp name="ThreadGroup.duration"></stringProp>
         <stringProp name="ThreadGroup.delay"></stringProp>
-        <boolProp name="ThreadGroup.same_user_on_next_iteration">false</boolProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <stringProp name="TestPlan.comments">Charge Reduite (50/15/25), Charge Moyenne (100/30/50), Charge Augmente (250/45/75), Charge Exceptionnelle (500/60/100)</stringProp>
       </ThreadGroup>
       <hashTree>
         <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP Header Manager" enabled="true">
@@ -262,7 +257,7 @@
     &quot;aggs&quot;: {&#xd;
         &quot;statistics&quot;: {&#xd;
             &quot;matrix_stats&quot;: {&#xd;
-                &quot;fields&quot;: [&quot;date&quot;, &quot;cases&quot;]&#xd;
+                &quot;fields&quot;: [&quot;cases&quot;, &quot;deaths&quot;]&#xd;
             }&#xd;
         }&#xd;
     }&#xd;
@@ -275,7 +270,7 @@
             <stringProp name="HTTPSampler.port">9200</stringProp>
             <stringProp name="HTTPSampler.protocol"></stringProp>
             <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
-            <stringProp name="HTTPSampler.path">/matrixstats/_search/?size=100&amp;pretty</stringProp>
+            <stringProp name="HTTPSampler.path">/_search/?size=100&amp;pretty</stringProp>
             <stringProp name="HTTPSampler.method">POST</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
